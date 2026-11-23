@@ -81,6 +81,75 @@ Se revisó que únicamente se incorporara Calculadora.java y se confirmó el mer
 9. Crear Pull Requests para incorporar cambios a main.
 10. Revisar los archivos y confirmar los merges.
 
-## Pendiente
 
-Añadir los comandos utilizados por la Persona B y verificar el funcionamiento conjunto del proyecto.
+## Comandos utilizados por la Persona B
+
+La Persona B se ha encargado de desarrollar la interfaz HTML de la calculadora en la rama frontend.
+
+1. `git clone https://github.com/luciasarquis/control-versiones-edd.git` - Clonar el repositorio.
+2. `cd control-versiones-edd` - Entrar en la carpeta del proyecto.
+3. `git switch -c frontend` - Crear la rama frontend.
+4. `git branch` - Comprobar la rama actual.
+5. Crear `index.html` desde Visual Studio Code.
+6. `git add index.html` - Preparar el archivo HTML.
+7. `git commit -m "Añadir interfaz HTML de calculadora"` - Guardar los cambios.
+8. `git push -u origin frontend` - Publicar la rama en GitHub.
+
+## Integración del frontend
+
+Se creó el Pull Request #2 desde frontend hacia main.
+
+Se comprobó que solamente se incorporaba index.html y que no había conflictos.
+
+Después se realizó el merge, conservando la rama frontend.
+
+## Actualización del backend
+
+Para conectar la calculadora Java con la interfaz HTML se utilizaron los siguientes comandos:
+
+1. `git switch backend` - Cambiar a la rama backend.
+2. Modificar `Calculadora.java` para incorporar un servidor HTTP local.
+3. `javac Calculadora.java` - Comprobar que el código compila.
+4. `git add Calculadora.java` - Preparar el archivo.
+5. `git commit -m "Conectar calculadora Java con HTML"` - Guardar los cambios.
+6. `git push origin backend` - Subir la actualización a GitHub.
+
+Se creó el Pull Request #3 desde backend hacia main y se fusionó sin conflictos.
+
+## Pruebas de funcionamiento
+
+Para comprobar la aplicación completa se ejecutaron:
+
+1. `git switch main` - Cambiar a la rama principal.
+2. `git pull origin main` - Descargar los últimos cambios.
+3. `javac Calculadora.java` - Compilar Java.
+4. `java Calculadora` - Iniciar el servidor local.
+
+La aplicación se abre desde el navegador utilizando:
+
+http://localhost:18765
+
+Se ha comprobado que la página HTML se comunica con Java y que la operación de suma funciona correctamente.
+
+Las operaciones implementadas son:
+
+- Suma.
+- Resta.
+- Multiplicación.
+- Potencia.
+
+Los números permitidos están comprendidos entre -99999 y 99999.
+
+## Resultado del trabajo
+
+Se ha desarrollado una calculadora con interfaz HTML y un backend Java.
+
+Durante la práctica se ha trabajado con ramas independientes, commits, repositorios remotos y Pull Requests.
+
+Las ramas utilizadas han sido:
+
+- main
+- backend
+- frontend
+
+Se han realizado tres Pull Requests y se han integrado los cambios en la rama principal.
