@@ -50,6 +50,7 @@ Los comandos se muestran en orden cronológico, incluyendo las correcciones real
 27. `git status` - Comprobar los archivos.
 28. `git config user.name "Lucia"` - Configurar el autor.
 29. `git config user.email "CORREO_VERIFICADO"` - Configurar el correo (se corrigió durante la práctica).
+Nota: Se ha sustituido el correo electrónico real por CORREO_VERIFICADO para no mostrar datos personales en el repositorio público.
 30. `git commit -m "Añadir calculadora Java"` - Guardar Java.
 31. `git commit --amend --no-edit --reset-author` - Corregir el autor.
 32. `git status` - Comprobar el commit.
