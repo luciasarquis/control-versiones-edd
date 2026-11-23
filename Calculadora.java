@@ -1,78 +1,177 @@
-import java.util.Scanner;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Calculadora {
 
-    // Suma dos numeros.
-    public static long sumar(int a, int b) {
+    private static final int MIN = -99999;
+    private static final int MAX = 99999;
+
+    // Comprueba que el numero este permitido.
+    private static boolean valido(int n) {
+        return n >= MIN && n <= MAX;
+    }
+
+    // Operaciones de la calculadora.
+    private static long sumar(int a, int b) {
         return (long) a + b;
     }
 
-    // Resta dos numeros.
-    public static long restar(int a, int b) {
+    private static long restar(int a, int b) {
         return (long) a - b;
     }
 
-    // Multiplica dos numeros.
-    public static long multiplicar(int a, int b) {
+    private static long multiplicar(int a, int b) {
         return (long) a * b;
     }
 
-    // Calcula una potencia.
-    public static double potencia(int a, int b) {
+    private static double potencia(int a, int b) {
         return Math.pow(a, b);
     }
 
-    // Comprueba el rango permitido.
-    public static boolean validar(int n) {
-        return n >= -99999 && n <= 99999;
+    // Recoge los datos enviados desde el HTML.
+    private static Map<String, String> parametros(String consulta) {
+        Map<String, String> datos = new HashMap<>();
+
+        if (consulta == null) {
+            return datos;
+        }
+
+        for (String parte : consulta.split("&")) {
+            String[] campo = parte.split("=", 2);
+
+            if (campo.length == 2) {
+                datos.put(
+                    URLDecoder.decode(campo[0], StandardCharsets.UTF_8),
+                    URLDecoder.decode(campo[1], StandardCharsets.UTF_8)
+                );
+            }
+        }
+
+        return datos;
     }
 
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
+    // Calcula el resultado de la operacion.
+    private static String resolver(Map<String, String> datos) {
+        try {
+            int a = Integer.parseInt(datos.getOrDefault("a", ""));
+            int b = Integer.parseInt(datos.getOrDefault("b", ""));
 
-        System.out.println("CALCULADORA");
-        System.out.println("1. Suma");
-        System.out.println("2. Resta");
-        System.out.println("3. Multiplicacion");
-        System.out.println("4. Potencia");
+            if (!valido(a) || !valido(b)) {
+                return "Error: numeros fuera del rango permitido.";
+            }
 
-        System.out.print("Elige una opcion: ");
-        int opcion = sc.nextInt();
+            String operacion = datos.getOrDefault("op", "");
 
-        System.out.print("Primer numero: ");
-        int a = sc.nextInt();
+            switch (operacion) {
+                case "suma":
+                    return "Resultado: " + sumar(a, b);
 
-        System.out.print("Segundo numero: ");
-        int b = sc.nextInt();
+                case "resta":
+                    return "Resultado: " + restar(a, b);
 
-        if (!validar(a) || !validar(b)) {
-            System.out.println("Error: numeros fuera del rango permitido.");
-            sc.close();
-            return;
+                case "multiplicacion":
+                    return "Resultado: " + multiplicar(a, b);
+
+                case "potencia":
+                    double resultado = potencia(a, b);
+
+                    if (!Double.isFinite(resultado)) {
+                        return "Error: resultado demasiado grande o indefinido.";
+                    }
+
+                    if (resultado == Math.rint(resultado)
+                            && Math.abs(resultado) < 1e15) {
+                        return "Resultado: " + (long) resultado;
+                    }
+
+                    return "Resultado: " + resultado;
+
+                default:
+                    return "Error: operacion no valida.";
+            }
+
+        } catch (NumberFormatException e) {
+            return "Error: introduce dos numeros enteros validos.";
         }
+    }
 
-        switch (opcion) {
-            case 1:
-                System.out.println("Resultado: " + sumar(a, b));
-                break;
-            case 2:
-                System.out.println("Resultado: " + restar(a, b));
-                break;
-            case 3:
-                System.out.println("Resultado: " + multiplicar(a, b));
-                break;
-            case 4:
-                double resultado = potencia(a, b);
-                if (Double.isInfinite(resultado) || Double.isNaN(resultado)) {
-                    System.out.println("Resultado demasiado grande.");
-                } else {
-                    System.out.println("Resultado: " + resultado);
-                }
-                break;
-            default:
-                System.out.println("Opcion no valida.");
+    // Envia el contenido al navegador.
+    private static void enviar(HttpExchange peticion, String html)
+            throws IOException {
+
+        byte[] contenido = html.getBytes(StandardCharsets.UTF_8);
+
+        peticion.getResponseHeaders().set(
+            "Content-Type", "text/html; charset=UTF-8"
+        );
+
+        peticion.sendResponseHeaders(200, contenido.length);
+
+        try (OutputStream salida = peticion.getResponseBody()) {
+            salida.write(contenido);
         }
+    }
 
-        sc.close();
+    // Inicia el servidor y conecta Java con HTML.
+    public static void main(String[] args) throws IOException {
+
+        HttpServer servidor = HttpServer.create(
+            new InetSocketAddress("127.0.0.1", 18765), 0
+        );
+
+        servidor.createContext("/calcular", peticion -> {
+
+            Map<String, String> datos = parametros(
+                peticion.getRequestURI().getRawQuery()
+            );
+
+            String resultado = resolver(datos);
+
+            String html =
+                "<!DOCTYPE html>" +
+                "<html lang='es'>" +
+                "<head><meta charset='UTF-8'>" +
+                "<title>Resultado</title></head>" +
+                "<body style='font-family:Arial;" +
+                "max-width:480px;margin:80px auto;padding:24px'>" +
+                "<h1>Calculadora</h1>" +
+                "<h2>" + resultado + "</h2>" +
+                "<a href='/'>Volver a calcular</a>" +
+                "</body></html>";
+
+            enviar(peticion, html);
+        });
+
+        servidor.createContext("/", peticion -> {
+
+            Path archivo = Path.of("index.html");
+
+            String html;
+
+            if (Files.exists(archivo)) {
+                html = Files.readString(
+                    archivo, StandardCharsets.UTF_8
+                );
+            } else {
+                html = "<h1>Falta el archivo index.html</h1>";
+            }
+
+            enviar(peticion, html);
+        });
+
+        servidor.start();
+
+        System.out.println("Calculadora disponible en:");
+        System.out.println("http://localhost:18765");
+        System.out.println("Pulsa Control+C para detener.");
     }
 }
